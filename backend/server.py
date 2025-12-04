@@ -338,6 +338,10 @@ async def get_vehicles(
     
     for vehicle in vehicles:
         for key in ['created_at', 'updated_at', 'road_tax_expiry', 'insurance_expiry', 'puc_expiry', 'fitness_expiry']:
+            if vehicle.get(key) and isinstance(vehicle[key], str):
+                vehicle[key] = datetime.fromisoformat(vehicle[key])
+    
+    return [Vehicle(**v) for v in vehicles]
 
 @api_router.put("/vehicles/{vehicle_id}/refresh", response_model=Vehicle)
 async def refresh_vehicle(
@@ -369,11 +373,6 @@ async def refresh_vehicle(
             updated_vehicle[key] = datetime.fromisoformat(updated_vehicle[key])
     
     return Vehicle(**updated_vehicle)
-
-            if vehicle.get(key) and isinstance(vehicle[key], str):
-                vehicle[key] = datetime.fromisoformat(vehicle[key])
-    
-    return [Vehicle(**v) for v in vehicles]
 
 @api_router.get("/vehicles/{vehicle_id}", response_model=Vehicle)
 async def get_vehicle(
