@@ -321,6 +321,38 @@ async def get_vehicles(
     
     for vehicle in vehicles:
         for key in ['created_at', 'updated_at', 'road_tax_expiry', 'insurance_expiry', 'puc_expiry', 'fitness_expiry']:
+
+@api_router.put("/vehicles/{vehicle_id}/refresh", response_model=Vehicle)
+async def refresh_vehicle(
+    vehicle_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    vehicle = await db.vehicles.find_one({"id": vehicle_id, "user_id": current_user.id}, {"_id": 0})
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    
+    vehicle_data = await mock_vehicle_api(vehicle['registration_number'])
+    
+    update_data = {
+        'road_tax_expiry': vehicle_data['road_tax_expiry'],
+        'insurance_expiry': vehicle_data['insurance_expiry'],
+        'puc_expiry': vehicle_data['puc_expiry'],
+        'fitness_expiry': vehicle_data['fitness_expiry'],
+        'updated_at': datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.vehicles.update_one(
+        {"id": vehicle_id, "user_id": current_user.id},
+        {"$set": update_data}
+    )
+    
+    updated_vehicle = await db.vehicles.find_one({"id": vehicle_id}, {"_id": 0})
+    for key in ['created_at', 'updated_at', 'road_tax_expiry', 'insurance_expiry', 'puc_expiry', 'fitness_expiry']:
+        if updated_vehicle.get(key) and isinstance(updated_vehicle[key], str):
+            updated_vehicle[key] = datetime.fromisoformat(updated_vehicle[key])
+    
+    return Vehicle(**updated_vehicle)
+
             if vehicle.get(key) and isinstance(vehicle[key], str):
                 vehicle[key] = datetime.fromisoformat(vehicle[key])
     
