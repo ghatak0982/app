@@ -166,15 +166,18 @@ backend:
 
   - task: "Vehicle Refresh Endpoint"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Added PUT /api/vehicles/{id}/refresh endpoint to refresh vehicle data"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Vehicle refresh endpoint working correctly. PUT /api/vehicles/{id}/refresh successfully updates vehicle expiry dates using mock API and returns updated vehicle data."
 
   - task: "Dashboard Stats"
     implemented: true
