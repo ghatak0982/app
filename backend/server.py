@@ -405,6 +405,48 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
     vehicles = await db.vehicles.find({"user_id": current_user.id}, {"_id": 0}).to_list(1000)
     
     total_vehicles = len(vehicles)
+
+
+@api_router.get("/settings", response_model=UserSettings)
+async def get_settings(current_user: User = Depends(get_current_user)):
+    settings = await db.settings.find_one({"user_id": current_user.id}, {"_id": 0})
+    
+    if not settings:
+        default_settings = UserSettings(user_id=current_user.id)
+        settings_dict = default_settings.model_dump()
+        settings_dict['updated_at'] = settings_dict['updated_at'].isoformat()
+        await db.settings.insert_one(settings_dict)
+        return default_settings
+    
+    if isinstance(settings.get('updated_at'), str):
+        settings['updated_at'] = datetime.fromisoformat(settings['updated_at'])
+    
+    return UserSettings(**settings)
+
+@api_router.patch("/settings")
+async def update_settings(
+    settings_update: UserSettingsUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    update_data = {k: v for k, v in settings_update.model_dump().items() if v is not None}
+    update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
+    
+    existing_settings = await db.settings.find_one({"user_id": current_user.id})
+    
+    if not existing_settings:
+        default_settings = UserSettings(user_id=current_user.id)
+        settings_dict = default_settings.model_dump()
+        settings_dict.update(update_data)
+        settings_dict['updated_at'] = settings_dict['updated_at'] if isinstance(settings_dict['updated_at'], str) else settings_dict['updated_at'].isoformat()
+        await db.settings.insert_one(settings_dict)
+    else:
+        await db.settings.update_one(
+            {"user_id": current_user.id},
+            {"$set": update_data}
+        )
+    
+    return {"message": "Settings updated successfully"}
+
     expiring_this_month = 0
     overdue = {"road_tax": 0, "insurance": 0, "puc": 0}
     
