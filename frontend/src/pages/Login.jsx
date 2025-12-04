@@ -7,13 +7,16 @@ import { AuthContext, API } from '@/App';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Truck, Mail, Lock } from 'lucide-react';
+import { Truck, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { signInWithGoogle } from '@/lib/firebase';
 
 export default function Login() {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm();
 
   const onSubmit = async (data) => {
@@ -30,20 +33,52 @@ export default function Login() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      const googleUser = await signInWithGoogle();
+      const response = await axios.post(`${API}/auth/google`, {
+        id_token: googleUser.idToken,
+        email: googleUser.email,
+        name: googleUser.name,
+        uid: googleUser.uid
+      });
+      login(response.data.access_token, response.data.user);
+      toast.success('Signed in with Google!');
+      navigate('/dashboard');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || error.message || 'Google sign-in failed');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex" data-testid="login-page">
-      <div 
-        className="hidden lg:flex lg:w-1/2 bg-cover bg-center relative"
-        style={{
-          backgroundImage: 'url(https://images.unsplash.com/photo-1704229266209-47d8d6ad0c46?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzl8MHwxfHNlYXJjaHwzfHxsb2dpc3RpY3MlMjBtYXAlMjBhYnN0cmFjdCUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzY0ODM0NjA4fDA&ixlib=rb-4.1.0&q=85)'
-        }}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/20 to-accent/10 relative overflow-hidden"
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-accent/80"></div>
-        <div className="relative z-10 flex flex-col justify-center px-16 text-white">
-          <h2 className="text-5xl font-poppins font-semibold mb-4">Welcome to FleetCare</h2>
-          <p className="text-xl opacity-90">Manage your fleet with ease and never miss a renewal deadline</p>
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl"></div>
         </div>
-      </div>
+        <div className="relative z-10 flex flex-col justify-center px-16 text-foreground">
+          <div className="mb-8">
+            <div className="inline-flex items-center gap-3 mb-6">
+              <div className="p-4 bg-primary rounded-2xl shadow-lg">
+                <Truck className="w-12 h-12 text-white" />
+              </div>
+            </div>
+          </div>
+          <h2 className="text-5xl font-poppins font-semibold mb-4">Welcome to<br/>FleetCare</h2>
+          <p className="text-xl text-muted-foreground leading-relaxed max-w-md">
+            Warm Neutrals with<br/>a Single Accent
+          </p>
+        </div>
+      </motion.div>
 
       <motion.div
         initial={{ x: 50, opacity: 0 }}
