@@ -92,6 +92,23 @@ class Notification(BaseModel):
     is_read: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+
+class UserSettings(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    user_id: str
+    email_notifications: bool = True
+    push_notifications: bool = False
+    notification_days_before: int = 15
+    notification_time: str = "09:00"
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class UserSettingsUpdate(BaseModel):
+    email_notifications: Optional[bool] = None
+    push_notifications: Optional[bool] = None
+    notification_days_before: Optional[int] = None
+    notification_time: Optional[str] = None
+
+
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
@@ -212,6 +229,36 @@ async def login(user_login: UserLogin):
         user={"id": user['id'], "email": user['email'], "name": user['name']}
     )
 
+class GoogleAuthRequest(BaseModel):
+    id_token: str
+    email: EmailStr
+    name: str
+    uid: str
+
+@api_router.post("/auth/google", response_model=Token)
+async def google_auth(auth_request: GoogleAuthRequest):
+    user = await db.users.find_one({"email": auth_request.email}, {"_id": 0})
+    
+    if not user:
+        new_user = User(
+            email=auth_request.email,
+            hashed_password=hash_password(str(uuid.uuid4())),
+            name=auth_request.name
+        )
+        user_dict = new_user.model_dump()
+        user_dict['created_at'] = user_dict['created_at'].isoformat()
+        user_dict['google_id'] = auth_request.uid
+        await db.users.insert_one(user_dict)
+        user = user_dict
+    
+    access_token = create_access_token(data={"sub": user['id']})
+    return Token(
+        access_token=access_token,
+        token_type="bearer",
+        user={"id": user['id'], "email": user['email'], "name": user['name']}
+    )
+
+
 @api_router.get("/auth/me")
 async def get_me(current_user: User = Depends(get_current_user)):
     return {"id": current_user.id, "email": current_user.email, "name": current_user.name}
@@ -296,6 +343,37 @@ async def get_vehicles(
     
     return [Vehicle(**v) for v in vehicles]
 
+@api_router.put("/vehicles/{vehicle_id}/refresh", response_model=Vehicle)
+async def refresh_vehicle(
+    vehicle_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    vehicle = await db.vehicles.find_one({"id": vehicle_id, "user_id": current_user.id}, {"_id": 0})
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    
+    vehicle_data = await mock_vehicle_api(vehicle['registration_number'])
+    
+    update_data = {
+        'road_tax_expiry': vehicle_data['road_tax_expiry'],
+        'insurance_expiry': vehicle_data['insurance_expiry'],
+        'puc_expiry': vehicle_data['puc_expiry'],
+        'fitness_expiry': vehicle_data['fitness_expiry'],
+        'updated_at': datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.vehicles.update_one(
+        {"id": vehicle_id, "user_id": current_user.id},
+        {"$set": update_data}
+    )
+    
+    updated_vehicle = await db.vehicles.find_one({"id": vehicle_id}, {"_id": 0})
+    for key in ['created_at', 'updated_at', 'road_tax_expiry', 'insurance_expiry', 'puc_expiry', 'fitness_expiry']:
+        if updated_vehicle.get(key) and isinstance(updated_vehicle[key], str):
+            updated_vehicle[key] = datetime.fromisoformat(updated_vehicle[key])
+    
+    return Vehicle(**updated_vehicle)
+
 @api_router.get("/vehicles/{vehicle_id}", response_model=Vehicle)
 async def get_vehicle(
     vehicle_id: str,
@@ -350,6 +428,46 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
         "expiring_this_month": expiring_this_month,
         "overdue": overdue
     }
+
+@api_router.get("/settings", response_model=UserSettings)
+async def get_settings(current_user: User = Depends(get_current_user)):
+    settings = await db.settings.find_one({"user_id": current_user.id}, {"_id": 0})
+    
+    if not settings:
+        default_settings = UserSettings(user_id=current_user.id)
+        settings_dict = default_settings.model_dump()
+        settings_dict['updated_at'] = settings_dict['updated_at'].isoformat()
+        await db.settings.insert_one(settings_dict)
+        return default_settings
+    
+    if isinstance(settings.get('updated_at'), str):
+        settings['updated_at'] = datetime.fromisoformat(settings['updated_at'])
+    
+    return UserSettings(**settings)
+
+@api_router.patch("/settings")
+async def update_settings(
+    settings_update: UserSettingsUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    update_data = {k: v for k, v in settings_update.model_dump().items() if v is not None}
+    update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
+    
+    existing_settings = await db.settings.find_one({"user_id": current_user.id})
+    
+    if not existing_settings:
+        default_settings = UserSettings(user_id=current_user.id)
+        settings_dict = default_settings.model_dump()
+        settings_dict.update(update_data)
+        settings_dict['updated_at'] = settings_dict['updated_at'] if isinstance(settings_dict['updated_at'], str) else settings_dict['updated_at'].isoformat()
+        await db.settings.insert_one(settings_dict)
+    else:
+        await db.settings.update_one(
+            {"user_id": current_user.id},
+            {"$set": update_data}
+        )
+    
+    return {"message": "Settings updated successfully"}
 
 @api_router.get("/notifications", response_model=List[Notification])
 async def get_notifications(current_user: User = Depends(get_current_user)):

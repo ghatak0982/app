@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 class FleetCareAPITester:
-    def __init__(self, base_url="https://fleet-track-7.preview.emergentagent.com"):
+    def __init__(self, base_url="https://vehicle-tracker-110.preview.emergentagent.com"):
         self.base_url = base_url
         self.token = None
         self.user_id = None
@@ -51,6 +51,8 @@ class FleetCareAPITester:
                 response = requests.post(url, json=data, headers=headers, timeout=10)
             elif method == 'PATCH':
                 response = requests.patch(url, json=data, headers=headers, timeout=10)
+            elif method == 'PUT':
+                response = requests.put(url, json=data, headers=headers, timeout=10)
             elif method == 'DELETE':
                 response = requests.delete(url, headers=headers, timeout=10)
 
@@ -231,6 +233,90 @@ class FleetCareAPITester:
         )
         return success
 
+    def test_google_auth(self):
+        """Test Google OAuth authentication"""
+        timestamp = datetime.now().strftime('%H%M%S')
+        test_data = {
+            "id_token": "mock_firebase_token_12345",
+            "email": f"google_user_{timestamp}@fleetcare.com",
+            "name": f"Google User {timestamp}",
+            "uid": f"google_uid_{timestamp}"
+        }
+        
+        success, response = self.run_test(
+            "Google OAuth Authentication",
+            "POST",
+            "auth/google",
+            200,
+            data=test_data
+        )
+        
+        if success and 'access_token' in response:
+            # Store token for subsequent tests
+            self.token = response['access_token']
+            self.user_id = response['user']['id']
+            return True, test_data
+        return False, test_data
+
+    def test_get_settings(self):
+        """Test getting user settings"""
+        success, response = self.run_test(
+            "Get User Settings",
+            "GET",
+            "settings",
+            200
+        )
+        
+        if success:
+            required_fields = ['user_id', 'email_notifications', 'push_notifications', 'notification_days_before', 'notification_time']
+            missing_fields = [field for field in required_fields if field not in response]
+            if missing_fields:
+                self.log_test("Settings Structure", False, f"Missing fields: {missing_fields}")
+                return False, response
+            else:
+                self.log_test("Settings Structure", True, "All required fields present")
+        
+        return success, response if success else {}
+
+    def test_update_settings(self):
+        """Test updating user settings"""
+        update_data = {
+            "email_notifications": False,
+            "push_notifications": True,
+            "notification_days_before": 7,
+            "notification_time": "10:30"
+        }
+        
+        success, response = self.run_test(
+            "Update User Settings",
+            "PATCH",
+            "settings",
+            200,
+            data=update_data
+        )
+        return success
+
+    def test_vehicle_refresh(self, vehicle_id):
+        """Test refreshing vehicle data"""
+        success, response = self.run_test(
+            "Refresh Vehicle Data",
+            "PUT",
+            f"vehicles/{vehicle_id}/refresh",
+            200
+        )
+        
+        if success:
+            # Check if response contains updated vehicle data
+            required_fields = ['id', 'registration_number', 'updated_at']
+            missing_fields = [field for field in required_fields if field not in response]
+            if missing_fields:
+                self.log_test("Vehicle Refresh Structure", False, f"Missing fields: {missing_fields}")
+                return False
+            else:
+                self.log_test("Vehicle Refresh Structure", True, "Vehicle data refreshed successfully")
+        
+        return success
+
 def main():
     print("🚛 FleetCare API Testing Suite")
     print("=" * 50)
@@ -253,11 +339,25 @@ def main():
     # Test get current user
     tester.test_get_me()
 
+    # PRIORITY TESTS - New Features
+    print("\n🔥 Testing NEW PRIORITY Features...")
+    
+    # Test Google OAuth (Priority #1)
+    google_auth_success, google_user_data = tester.test_google_auth()
+    
+    # Test Settings endpoints (Priority #2)
+    settings_get_success, settings_data = tester.test_get_settings()
+    settings_update_success = tester.test_update_settings()
+
     # Test vehicle management
     print("\n🚗 Testing Vehicle Management...")
     
     # Add single vehicle
     add_success, vehicle_id = tester.test_add_vehicle()
+    
+    # Test Vehicle Refresh endpoint (Priority #3)
+    if vehicle_id:
+        refresh_success = tester.test_vehicle_refresh(vehicle_id)
     
     # Bulk add vehicles
     bulk_success, bulk_vehicle_ids = tester.test_bulk_add_vehicles()
@@ -288,6 +388,15 @@ def main():
     # Print final results
     print("\n" + "=" * 50)
     print(f"📊 Test Results: {tester.tests_passed}/{tester.tests_run} passed")
+    
+    # Highlight priority test results
+    priority_tests = ["Google OAuth Authentication", "Get User Settings", "Update User Settings", "Refresh Vehicle Data"]
+    priority_results = [test for test in tester.test_results if test['test'] in priority_tests]
+    
+    print(f"\n🔥 PRIORITY Tests Results:")
+    for test in priority_results:
+        status = "✅ PASS" if test['success'] else "❌ FAIL"
+        print(f"   {status} - {test['test']}")
     
     if tester.tests_passed == tester.tests_run:
         print("🎉 All tests passed!")
