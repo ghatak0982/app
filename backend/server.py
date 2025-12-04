@@ -92,6 +92,23 @@ class Notification(BaseModel):
     is_read: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+
+class UserSettings(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    user_id: str
+    email_notifications: bool = True
+    push_notifications: bool = False
+    notification_days_before: int = 15
+    notification_time: str = "09:00"
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class UserSettingsUpdate(BaseModel):
+    email_notifications: Optional[bool] = None
+    push_notifications: Optional[bool] = None
+    notification_days_before: Optional[int] = None
+    notification_time: Optional[str] = None
+
+
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
