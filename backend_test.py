@@ -337,11 +337,25 @@ def main():
     # Test get current user
     tester.test_get_me()
 
+    # PRIORITY TESTS - New Features
+    print("\n🔥 Testing NEW PRIORITY Features...")
+    
+    # Test Google OAuth (Priority #1)
+    google_auth_success, google_user_data = tester.test_google_auth()
+    
+    # Test Settings endpoints (Priority #2)
+    settings_get_success, settings_data = tester.test_get_settings()
+    settings_update_success = tester.test_update_settings()
+
     # Test vehicle management
     print("\n🚗 Testing Vehicle Management...")
     
     # Add single vehicle
     add_success, vehicle_id = tester.test_add_vehicle()
+    
+    # Test Vehicle Refresh endpoint (Priority #3)
+    if vehicle_id:
+        refresh_success = tester.test_vehicle_refresh(vehicle_id)
     
     # Bulk add vehicles
     bulk_success, bulk_vehicle_ids = tester.test_bulk_add_vehicles()
@@ -372,6 +386,15 @@ def main():
     # Print final results
     print("\n" + "=" * 50)
     print(f"📊 Test Results: {tester.tests_passed}/{tester.tests_run} passed")
+    
+    # Highlight priority test results
+    priority_tests = ["Google OAuth Authentication", "Get User Settings", "Update User Settings", "Refresh Vehicle Data"]
+    priority_results = [test for test in tester.test_results if test['test'] in priority_tests]
+    
+    print(f"\n🔥 PRIORITY Tests Results:")
+    for test in priority_results:
+        status = "✅ PASS" if test['success'] else "❌ FAIL"
+        print(f"   {status} - {test['test']}")
     
     if tester.tests_passed == tester.tests_run:
         print("🎉 All tests passed!")
