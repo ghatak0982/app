@@ -231,6 +231,90 @@ class FleetCareAPITester:
         )
         return success
 
+    def test_google_auth(self):
+        """Test Google OAuth authentication"""
+        timestamp = datetime.now().strftime('%H%M%S')
+        test_data = {
+            "id_token": "mock_firebase_token_12345",
+            "email": f"google_user_{timestamp}@fleetcare.com",
+            "name": f"Google User {timestamp}",
+            "uid": f"google_uid_{timestamp}"
+        }
+        
+        success, response = self.run_test(
+            "Google OAuth Authentication",
+            "POST",
+            "auth/google",
+            200,
+            data=test_data
+        )
+        
+        if success and 'access_token' in response:
+            # Store token for subsequent tests
+            self.token = response['access_token']
+            self.user_id = response['user']['id']
+            return True, test_data
+        return False, test_data
+
+    def test_get_settings(self):
+        """Test getting user settings"""
+        success, response = self.run_test(
+            "Get User Settings",
+            "GET",
+            "settings",
+            200
+        )
+        
+        if success:
+            required_fields = ['user_id', 'email_notifications', 'push_notifications', 'notification_days_before', 'notification_time']
+            missing_fields = [field for field in required_fields if field not in response]
+            if missing_fields:
+                self.log_test("Settings Structure", False, f"Missing fields: {missing_fields}")
+                return False, response
+            else:
+                self.log_test("Settings Structure", True, "All required fields present")
+        
+        return success, response if success else {}
+
+    def test_update_settings(self):
+        """Test updating user settings"""
+        update_data = {
+            "email_notifications": False,
+            "push_notifications": True,
+            "notification_days_before": 7,
+            "notification_time": "10:30"
+        }
+        
+        success, response = self.run_test(
+            "Update User Settings",
+            "PATCH",
+            "settings",
+            200,
+            data=update_data
+        )
+        return success
+
+    def test_vehicle_refresh(self, vehicle_id):
+        """Test refreshing vehicle data"""
+        success, response = self.run_test(
+            "Refresh Vehicle Data",
+            "PUT",
+            f"vehicles/{vehicle_id}/refresh",
+            200
+        )
+        
+        if success:
+            # Check if response contains updated vehicle data
+            required_fields = ['id', 'registration_number', 'updated_at']
+            missing_fields = [field for field in required_fields if field not in response]
+            if missing_fields:
+                self.log_test("Vehicle Refresh Structure", False, f"Missing fields: {missing_fields}")
+                return False
+            else:
+                self.log_test("Vehicle Refresh Structure", True, "Vehicle data refreshed successfully")
+        
+        return success
+
 def main():
     print("🚛 FleetCare API Testing Suite")
     print("=" * 50)
