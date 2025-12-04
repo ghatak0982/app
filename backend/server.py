@@ -404,7 +404,30 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
     vehicles = await db.vehicles.find({"user_id": current_user.id}, {"_id": 0}).to_list(1000)
     
     total_vehicles = len(vehicles)
-
+    expiring_this_month = 0
+    overdue = {"road_tax": 0, "insurance": 0, "puc": 0}
+    
+    now = datetime.now(timezone.utc)
+    month_end = now + timedelta(days=30)
+    
+    for vehicle in vehicles:
+        for key in ['road_tax_expiry', 'insurance_expiry', 'puc_expiry']:
+            if vehicle.get(key):
+                expiry_date = datetime.fromisoformat(vehicle[key]) if isinstance(vehicle[key], str) else vehicle[key]
+                if expiry_date.tzinfo is None:
+                    expiry_date = expiry_date.replace(tzinfo=timezone.utc)
+                
+                if expiry_date < now:
+                    doc_type = key.replace('_expiry', '')
+                    overdue[doc_type] = overdue.get(doc_type, 0) + 1
+                elif expiry_date <= month_end:
+                    expiring_this_month += 1
+    
+    return {
+        "total_vehicles": total_vehicles,
+        "expiring_this_month": expiring_this_month,
+        "overdue": overdue
+    }
 
 @api_router.get("/settings", response_model=UserSettings)
 async def get_settings(current_user: User = Depends(get_current_user)):
@@ -445,31 +468,6 @@ async def update_settings(
         )
     
     return {"message": "Settings updated successfully"}
-
-    expiring_this_month = 0
-    overdue = {"road_tax": 0, "insurance": 0, "puc": 0}
-    
-    now = datetime.now(timezone.utc)
-    month_end = now + timedelta(days=30)
-    
-    for vehicle in vehicles:
-        for key in ['road_tax_expiry', 'insurance_expiry', 'puc_expiry']:
-            if vehicle.get(key):
-                expiry_date = datetime.fromisoformat(vehicle[key]) if isinstance(vehicle[key], str) else vehicle[key]
-                if expiry_date.tzinfo is None:
-                    expiry_date = expiry_date.replace(tzinfo=timezone.utc)
-                
-                if expiry_date < now:
-                    doc_type = key.replace('_expiry', '')
-                    overdue[doc_type] = overdue.get(doc_type, 0) + 1
-                elif expiry_date <= month_end:
-                    expiring_this_month += 1
-    
-    return {
-        "total_vehicles": total_vehicles,
-        "expiring_this_month": expiring_this_month,
-        "overdue": overdue
-    }
 
 @api_router.get("/notifications", response_model=List[Notification])
 async def get_notifications(current_user: User = Depends(get_current_user)):
