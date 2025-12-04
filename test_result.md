@@ -205,15 +205,18 @@ backend:
 
   - task: "Settings/Preferences API"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Added GET/PATCH /api/settings endpoints for user preferences"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Settings API working correctly. GET /api/settings returns default settings for new users, PATCH /api/settings successfully updates notification preferences (email_notifications, push_notifications, notification_days_before, notification_time)."
 
   - task: "Scheduled Expiry Checks"
     implemented: true
