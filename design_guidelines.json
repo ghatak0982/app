@@ -1,0 +1,161 @@
+{
+  "identity": {
+    "name": "FleetCare",
+    "persona": "E1: The Anti-AI Designer",
+    "tone": "Reliable, Efficient, Modern, Tactile",
+    "target_audience": "Indian fleet owners managing commercial vehicles"
+  },
+  "typography": {
+    "font_family": {
+      "heading": "Poppins, sans-serif",
+      "body": "Inter, sans-serif"
+    },
+    "weights": {
+      "heading": "SemiBold (600)",
+      "body": "Regular (400), Medium (500)"
+    },
+    "scale": {
+      "h1": "text-4xl md:text-5xl tracking-tight font-semibold",
+      "h2": "text-3xl tracking-tight font-semibold",
+      "h3": "text-2xl tracking-tight font-semibold",
+      "p": "text-base leading-relaxed text-muted-foreground",
+      "small": "text-sm font-medium text-muted-foreground"
+    },
+    "rules": [
+      "Headings MUST use Poppins.",
+      "Body text MUST use Inter.",
+      "Use tight tracking (-0.02em) for all headings larger than 24px.",
+      "Never use pure black text. Use #1C1F23 for primary text."
+    ]
+  },
+  "colors": {
+    "palette": {
+      "primary": "#0066FF",
+      "accent": "#00C896",
+      "background": "#F7F9FC",
+      "card": "#FFFFFF",
+      "text": "#1C1F23",
+      "muted": "#94A3B8",
+      "border": "#E2E8F0",
+      "success": "#00C896",
+      "warning": "#F59E0B",
+      "destructive": "#EF4444"
+    },
+    "usage": {
+      "primary": "Main actions, active states, brand elements",
+      "accent": "Success states, updated status badges",
+      "background": "Global app background",
+      "card": "Container backgrounds (neumorphic surface)",
+      "warning": "Due soon (within 15 days) badges",
+      "destructive": "Expired status badges, delete actions"
+    }
+  },
+  "visual_enhancers": {
+    "shadows": {
+      "neumorphic": "5px 5px 10px #d1d9e6, -5px -5px 10px #ffffff",
+      "neumorphic_hover": "7px 7px 14px #d1d9e6, -7px -7px 14px #ffffff",
+      "neumorphic_inset": "inset 5px 5px 10px #d1d9e6, inset -5px -5px 10px #ffffff"
+    },
+    "radius": {
+      "card": "1rem",
+      "button": "0.5rem"
+    },
+    "gradients": {
+      "primary_fade": "linear-gradient(180deg, rgba(0,102,255,0.1) 0%, rgba(0,102,255,0) 100%)"
+    }
+  },
+  "layout": {
+    "grid_system": "The 'Control Room' Grid (Mode B)",
+    "spacing": "Generous. Use p-6 or p-8 for card internals.",
+    "structure": {
+      "sidebar": "Fixed left, width 250px, glassmorphism effect",
+      "header": "Fixed top, height 64px, transparent with blur",
+      "main": "ml-64 pt-20 px-8 pb-8"
+    }
+  },
+  "components": {
+    "Card": {
+      "path": "/app/frontend/src/components/ui/card.tsx",
+      "style": "bg-white rounded-2xl shadow-[5px_5px_10px_#d1d9e6,-5px_-5px_10px_#ffffff] border-none transition-all duration-300 hover:shadow-[7px_7px_14px_#d1d9e6,-7px_-7px_14px_#ffffff]"
+    },
+    "Button": {
+      "path": "/app/frontend/src/components/ui/button.tsx",
+      "style": "rounded-lg font-medium transition-all active:scale-95 shadow-md hover:shadow-lg"
+    },
+    "Badge": {
+      "path": "/app/frontend/src/components/ui/badge.tsx",
+      "variants": {
+        "success": "bg-[#00C896]/10 text-[#00C896] border-[#00C896]/20",
+        "warning": "bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/20",
+        "destructive": "bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/20"
+      }
+    }
+  },
+  "motion": {
+    "library": "framer-motion",
+    "animations": {
+      "page_transition": {
+        "initial": { "opacity": 0, "y": 20 },
+        "animate": { "opacity": 1, "y": 0 },
+        "exit": { "opacity": 0, "y": -20 },
+        "transition": { "duration": 0.3 }
+      },
+      "stagger_container": {
+        "hidden": { "opacity": 0 },
+        "show": {
+          "opacity": 1,
+          "transition": { "staggerChildren": 0.1 }
+        }
+      },
+      "card_enter": {
+        "hidden": { "opacity": 0, "y": 20 },
+        "show": { "opacity": 1, "y": 0 }
+      },
+      "accordion": {
+        "open": { "height": "auto", "opacity": 1 },
+        "closed": { "height": 0, "opacity": 0 }
+      }
+    }
+  },
+  "image_urls": {
+    "hero_truck": {
+      "url": "https://images.unsplash.com/photo-1681004478577-cb7f8421f78c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHwzfHxjb21tZXJjaWFsJTIwdHJ1Y2slMjBmbGVldCUyMGluZGlhfGVufDB8fHx8MTc2NDgzNDYwM3ww&ixlib=rb-4.1.0&q=85",
+      "description": "Colorful Indian truck on road",
+      "category": "dashboard_hero"
+    },
+    "fleet_grid": {
+      "url": "https://images.unsplash.com/photo-1716512060259-d114cfba13e8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHw0fHxjb21tZXJjaWFsJTIwdHJ1Y2slMjBmbGVldCUyMGluZGlhfGVufDB8fHx8MTc2NDgzNDYwM3ww&ixlib=rb-4.1.0&q=85",
+      "description": "Urban cargo truck scene",
+      "category": "vehicle_list_header"
+    },
+    "driver_avatar": {
+      "url": "https://images.unsplash.com/photo-1695395860103-38d172403a46?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHxpbmRpYW4lMjB0cnVjayUyMGRyaXZlciUyMHBvcnRyYWl0fGVufDB8fHx8MTc2NDgzNDYwNXww&ixlib=rb-4.1.0&q=85",
+      "description": "Driver in truck cabin",
+      "category": "profile_placeholder"
+    },
+    "login_bg": {
+      "url": "https://images.unsplash.com/photo-1704229266209-47d8d6ad0c46?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzl8MHwxfHNlYXJjaHwzfHxsb2dpc3RpY3MlMjBtYXAlMjBhYnN0cmFjdCUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzY0ODM0NjA4fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Aerial city night view",
+      "category": "auth_background"
+    }
+  },
+  "instructions_to_main_agent": [
+    "INSTALL framer-motion: `yarn add framer-motion` immediately.",
+    "INSTALL recharts: `yarn add recharts` for the dashboard analytics.",
+    "Configure Tailwind to use the specific colors provided in `colors.palette`.",
+    "Implement the 'Neumorphic' shadow as a custom utility class `.shadow-neu` in `index.css`.",
+    "Use `lucide-react` for all icons.",
+    "Ensure all interactive elements have `data-testid` attributes.",
+    "The Dashboard must use the 'Control Room' grid layout (dense, data-heavy).",
+    "Use the provided image URLs for the respective sections.",
+    "For the 'Add Vehicle' bulk upload, use a large text area or file drop zone with the 'neumorphic_inset' shadow style."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Do not use generic centered layouts.",
+    "Create depth through layered design elements.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur) for the sidebar.",
+    "Every interaction needs micro-animations.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Subtle grain textures on the background are encouraged to reduce digital flatness."
+  ]
+}
