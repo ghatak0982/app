@@ -359,10 +359,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Google OAuth Integration"
     - "Warm Neutral Theme"
     - "Settings Page Functionality"
-    - "Vehicle Refresh Endpoint"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
