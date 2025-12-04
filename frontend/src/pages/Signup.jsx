@@ -7,13 +7,16 @@ import { AuthContext, API } from '@/App';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Truck, Mail, Lock, User } from 'lucide-react';
+import { Truck, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { signInWithGoogle } from '@/lib/firebase';
 
 export default function Signup() {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { register, handleSubmit, formState: { errors }, watch } = useForm();
 
   const onSubmit = async (data) => {
@@ -30,25 +33,45 @@ export default function Signup() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      const googleUser = await signInWithGoogle();
+      const response = await axios.post(`${API}/auth/google`, {
+        id_token: googleUser.idToken,
+        email: googleUser.email,
+        name: googleUser.name,
+        uid: googleUser.uid
+      });
+      login(response.data.access_token, response.data.user);
+      toast.success('Signed in with Google!');
+      navigate('/dashboard');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || error.message || 'Google sign-in failed');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex" data-testid="signup-page">
       <motion.div
         initial={{ x: -50, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="w-full lg:w-1/2 flex items-center justify-center p-8"
+        className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background"
       >
         <div className="w-full max-w-md">
-          <div className="flex items-center gap-3 mb-8">
+          <div className="flex items-center gap-3 mb-8 lg:hidden">
             <div className="p-3 bg-primary rounded-xl">
               <Truck className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-3xl font-poppins font-semibold">FleetCare</h1>
+            <h1 className="text-3xl font-poppins font-semibold text-foreground">FleetCare</h1>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-neu p-8">
-            <h2 className="text-2xl font-poppins font-semibold mb-2">Create Account</h2>
-            <p className="text-muted-foreground mb-6">Start managing your fleet today</p>
+          <div className="bg-card rounded-3xl shadow-neu p-10 border border-border/20">
+            <h2 className="text-3xl font-poppins font-semibold mb-2 text-foreground">Create Account</h2>
+            <p className="text-muted-foreground mb-8">Start managing your fleet today</p>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div className="space-y-2">
