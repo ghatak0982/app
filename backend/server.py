@@ -212,6 +212,36 @@ async def login(user_login: UserLogin):
         user={"id": user['id'], "email": user['email'], "name": user['name']}
     )
 
+class GoogleAuthRequest(BaseModel):
+    id_token: str
+    email: EmailStr
+    name: str
+    uid: str
+
+@api_router.post("/auth/google", response_model=Token)
+async def google_auth(auth_request: GoogleAuthRequest):
+    user = await db.users.find_one({"email": auth_request.email}, {"_id": 0})
+    
+    if not user:
+        new_user = User(
+            email=auth_request.email,
+            hashed_password=hash_password(str(uuid.uuid4())),
+            name=auth_request.name
+        )
+        user_dict = new_user.model_dump()
+        user_dict['created_at'] = user_dict['created_at'].isoformat()
+        user_dict['google_id'] = auth_request.uid
+        await db.users.insert_one(user_dict)
+        user = user_dict
+    
+    access_token = create_access_token(data={"sub": user['id']})
+    return Token(
+        access_token=access_token,
+        token_type="bearer",
+        user={"id": user['id'], "email": user['email'], "name": user['name']}
+    )
+
+
 @api_router.get("/auth/me")
 async def get_me(current_user: User = Depends(get_current_user)):
     return {"id": current_user.id, "email": current_user.email, "name": current_user.name}
